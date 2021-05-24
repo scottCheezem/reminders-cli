@@ -18,10 +18,19 @@ private struct Show: ParsableCommand {
 
     @Argument(
         help: "The list to print items from, see 'show-lists' for names")
-    var listName: String
+    var listNames: [String]
 
+    @Flag(
+        name: .shortAndLong,
+        help: "format output as JSON")
+    var json = false
+    
+    @Flag(name: .shortAndLong, help: "")
+    var dueDateOnly = false
+    
     func run() {
-        reminders.showListItems(withName: self.listName)
+        print("running with \(self.listNames)")
+        reminders.showListItems(withNames: self.listNames, inFormat: (json ? .json : .plainText))
     }
 }
 

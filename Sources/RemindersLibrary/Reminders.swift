@@ -1,11 +1,39 @@
 import EventKit
 import Foundation
 
+public enum OutputFormat {
+    case json, plainText
+}
+
+enum ReminderCodingKeys: String, CodingKey {
+    case title
+    case dueDateEpoch
+    case dueDateHumanReadable
+}
+
+extension EKReminder: Encodable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: ReminderCodingKeys.self)
+        try container.encode(self.title, forKey: ReminderCodingKeys.title)
+        if let _ = self.dueDateComponents {
+            try container.encode(formattedDueDate(from: self), forKey: ReminderCodingKeys.dueDateHumanReadable)
+            try container.encode(formattedEpochTimer(from: self), forKey: ReminderCodingKeys.dueDateEpoch)
+        }
+    }
+}
+
+
 private let Store = EKEventStore()
 private let dateFormatter = RelativeDateTimeFormatter()
 private func formattedDueDate(from reminder: EKReminder) -> String? {
-    return reminder.dueDateComponents?.date.map {
+    reminder.dueDateComponents?.date.map {
         dateFormatter.localizedString(for: $0, relativeTo: Date())
+    }
+}
+
+private func formattedEpochTimer(from reminder: EKReminder) -> String? {
+    reminder.dueDateComponents?.date.map {
+        String(Int($0.timeIntervalSince1970))
     }
 }
 
@@ -34,19 +62,25 @@ public final class Reminders {
         }
     }
 
-    func showListItems(withName name: String) {
-        let calendar = self.calendar(withName: name)
-        let semaphore = DispatchSemaphore(value: 0)
-
-        self.reminders(onCalendar: calendar) { reminders in
-            for (i, reminder) in reminders.enumerated() {
-                print(format(reminder, at: i))
-            }
-
-            semaphore.signal()
+    func showListItems(withNames names: [String], inFormat: OutputFormat = .plainText) {
+        if let calendars = self.calendars(withNames: names), let calendar = calendars.first {
+            let semaphore = DispatchSemaphore(value: 0)
+                self.reminders(onCalendar: calendar) { reminders in
+                    
+                    if inFormat == .json,
+                       let jsonData = try? JSONEncoder().encode(reminders),
+                       let jsonString = String(data: jsonData, encoding: String.Encoding.utf8) {
+                        print(jsonString)
+                    }
+                    else  {
+                        for (i, reminder) in reminders.enumerated() {
+                            print(format(reminder, at: i))
+                        }
+                    }
+                    semaphore.signal()
+                }
+            semaphore.wait()
         }
-
-        semaphore.wait()
     }
 
     func complete(itemAtIndex index: Int, onListNamed name: String) {
@@ -109,6 +143,13 @@ public final class Reminders {
         } else {
             print("No reminders list matching \(name)")
             exit(1)
+        }
+    }
+    
+    private func calendars(withNames names: [String]) -> [EKCalendar]? {
+        let lowerCasedNames = names.map{ $0.lowercased() }
+        if let calendars = try? self.getCalendars().filter({ lowerCasedNames.contains( $0.title.lowercased() )}) {
+            return calendars
         }
     }
 
