@@ -25,12 +25,13 @@ private struct Show: ParsableCommand {
         help: "format output as JSON")
     var json = false
     
-    @Flag(name: .shortAndLong, help: "")
+    @Flag(
+        name: .shortAndLong,
+        help: "only return items that have a dute date")
     var dueDateOnly = false
     
     func run() {
-        print("running with \(self.listNames)")
-        reminders.showListItems(withNames: self.listNames, inFormat: (json ? .json : .plainText))
+        reminders.showListItems(withNames: self.listNames, inFormat: (json ? .json : .plainText), dueDateOnly: dueDateOnly)
     }
 }
 

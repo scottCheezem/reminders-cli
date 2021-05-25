@@ -62,18 +62,18 @@ public final class Reminders {
         }
     }
 
-    func showListItems(withNames names: [String], inFormat: OutputFormat = .plainText) {
-        if let calendars = self.calendars(withNames: names), let calendar = calendars.first {
+    func showListItems(withNames names: [String], inFormat: OutputFormat = .plainText, dueDateOnly: Bool = false) {
+        if let calendars = self.calendars(withNames: names) {
             let semaphore = DispatchSemaphore(value: 0)
-                self.reminders(onCalendar: calendar) { reminders in
-                    
+                self.reminders(onCalendars: calendars) { reminders in
+                    let filteredReminders = dueDateOnly ? reminders.filter{$0.dueDateComponents != nil} : reminders
                     if inFormat == .json,
-                       let jsonData = try? JSONEncoder().encode(reminders),
+                       let jsonData = try? JSONEncoder().encode(filteredReminders),
                        let jsonString = String(data: jsonData, encoding: String.Encoding.utf8) {
                         print(jsonString)
                     }
                     else  {
-                        for (i, reminder) in reminders.enumerated() {
+                        for (i, reminder) in filteredReminders.enumerated() {
                             print(format(reminder, at: i))
                         }
                     }
@@ -87,7 +87,7 @@ public final class Reminders {
         let calendar = self.calendar(withName: name)
         let semaphore = DispatchSemaphore(value: 0)
 
-        self.reminders(onCalendar: calendar) { reminders in
+        self.reminders(onCalendars: [calendar]) { reminders in
             guard let reminder = reminders[safe: index] else {
                 print("No reminder at index \(index) on \(name)")
                 exit(1)
@@ -126,10 +126,10 @@ public final class Reminders {
 
     // MARK: - Private functions
 
-    private func reminders(onCalendar calendar: EKCalendar,
+    private func reminders(onCalendars calendars: [EKCalendar],
                                       completion: @escaping (_ reminders: [EKReminder]) -> Void)
     {
-        let predicate = Store.predicateForReminders(in: [calendar])
+        let predicate = Store.predicateForReminders(in: calendars)
         Store.fetchReminders(matching: predicate) { reminders in
             let reminders = reminders?
                 .filter { !$0.isCompleted }
