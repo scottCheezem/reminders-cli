@@ -31,9 +31,9 @@ private func formattedDueDate(from reminder: EKReminder) -> String? {
     }
 }
 
-private func formattedEpochTimer(from reminder: EKReminder) -> String? {
+private func formattedEpochTimer(from reminder: EKReminder) -> Int? {
     reminder.dueDateComponents?.date.map {
-        String(Int($0.timeIntervalSince1970))
+        Int($0.timeIntervalSince1970)
     }
 }
 
