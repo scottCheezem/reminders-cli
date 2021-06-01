@@ -9,6 +9,7 @@ enum ReminderCodingKeys: String, CodingKey {
     case title
     case dueDateEpoch
     case dueDateHumanReadable
+    case creationDate
 }
 
 extension EKReminder: Encodable {
@@ -18,6 +19,9 @@ extension EKReminder: Encodable {
         if let _ = self.dueDateComponents {
             try container.encode(formattedDueDate(from: self), forKey: ReminderCodingKeys.dueDateHumanReadable)
             try container.encode(formattedEpochTimer(from: self), forKey: ReminderCodingKeys.dueDateEpoch)
+        }
+        if let creationDate = self.creationDate {
+            try container.encode(creationDate.timeIntervalSince1970, forKey: ReminderCodingKeys.creationDate)
         }
     }
 }
