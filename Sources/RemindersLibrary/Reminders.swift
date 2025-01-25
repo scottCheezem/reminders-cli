@@ -10,9 +10,11 @@ enum ReminderCodingKeys: String, CodingKey {
     case dueDateEpoch
     case dueDateHumanReadable
     case creationDate
+    case calendarTitle
+    case calendarColor
 }
 
-extension EKReminder: Encodable {
+extension EKReminder: @retroactive Encodable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: ReminderCodingKeys.self)
         try container.encode(self.title, forKey: ReminderCodingKeys.title)
@@ -22,6 +24,12 @@ extension EKReminder: Encodable {
         }
         if let creationDate = self.creationDate {
             try container.encode(creationDate.timeIntervalSince1970, forKey: ReminderCodingKeys.creationDate)
+        }
+        if let calendarTitle = self.calendar?.title {
+            try container.encode(calendarTitle, forKey: ReminderCodingKeys.calendarTitle)
+        }
+        if let calendarCGColor = self.calendar?.cgColor, let hexString = calendarCGColor.hexString {
+            try container.encode(hexString, forKey: ReminderCodingKeys.calendarColor)
         }
     }
 }
@@ -160,5 +168,19 @@ public final class Reminders {
     private func getCalendars() -> [EKCalendar] {
         return Store.calendars(for: .reminder)
                     .filter { $0.allowsContentModifications }
+    }
+}
+
+
+extension CGColor {
+    var hexString: String? {
+        guard let components = components, components.count >= 3 else { return nil }
+        let red: CGFloat = components[0]
+        let green: CGFloat = components[1]
+        let blue: CGFloat = components[2]
+        return String(format: "#%02lX%02lX%02lX",
+                      lroundf(Float(red * 255)),
+                      lroundf(Float(green * 255)),
+                      lroundf(Float(blue * 255)))
     }
 }
