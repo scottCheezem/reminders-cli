@@ -39,7 +39,7 @@ private func components(from string: String) -> DateComponents? {
     return parsedComponents
 }
 
-extension DateComponents: ExpressibleByArgument {
+extension DateComponents: @retroactive ExpressibleByArgument {
       public init?(argument: String) {
           if let components = components(from: argument) {
               self = components

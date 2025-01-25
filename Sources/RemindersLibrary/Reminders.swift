@@ -159,10 +159,11 @@ public final class Reminders {
     }
     
     private func calendars(withNames names: [String]) -> [EKCalendar]? {
-        let lowerCasedNames = names.map{ $0.lowercased() }
-        if let calendars = try? self.getCalendars().filter({ lowerCasedNames.contains( $0.title.lowercased() )}) {
-            return calendars
-        }
+        let lowerCasedNames = names.map { $0.lowercased() }
+//        if let calendars = try? self.getCalendars().filter({ lowerCasedNames.contains( $0.title.lowercased() )}) {
+//            return calendars
+//        }
+        return self.getCalendars().filter({ lowerCasedNames.contains( $0.title.lowercased() )})
     }
 
     private func getCalendars() -> [EKCalendar] {
